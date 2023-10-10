@@ -14,14 +14,35 @@ def receive_data():
     while True:
         data_received = client_socket.recv(constants.RECV_BUFFER_SIZE)
         received_message = data_received.decode(constants.ENCODING_FORMAT)
-        if received_message == "Flecha Arriba!":
-            time.sleep(1)
+        if received_message == "Flecha Arriba!\n":
+            #print("receiv flecha arriba")
+            pass
         
-        print(data_received.decode(constants.ENCODING_FORMAT))
+        
+        #print(data_received.decode(constants.ENCODING_FORMAT))
+
+def presionoUpArrow():
+    global comandoArriba
+    comandoArriba = False
+    while True:
+        if keyboard.is_pressed('up arrow'):
+            comandoArriba = True
+            time.sleep(0.5)
+        
+def presionoDownArrow():
+    global comandoAbajo
+    comandoAbajo = False
+    while True:
+        if keyboard.is_pressed('down arrow'):
+            comandoAbajo = True
+            time.sleep(0.5)
+
 
 
 def main():
     global received_message
+    global comandoArriba
+    global comandoAbajo
     print('***********************************')
     print('Client is running...')
     client_socket.connect((constants.SERVER_ADDRESS,constants.PORT))
@@ -32,31 +53,39 @@ def main():
     print('Input commands:')
 
     receiver_thread = threading.Thread(target=receive_data)
+    Arriba_thread = threading.Thread(target=presionoUpArrow)
+    Abajo_thread = threading.Thread(target=presionoDownArrow)
+    Abajo_thread.start()
+    Arriba_thread.start()
     receiver_thread.start() 
 
     while True:
-        #data_received = client_socket.recv(constants.RECV_BUFFER_SIZE)
 
-        if keyboard.is_pressed('up arrow'):
+        if comandoArriba:
             message_to_send = "Flecha arriba"
             client_socket.send(bytes(message_to_send, constants.ENCODING_FORMAT))
-            data_received = client_socket.recv(constants.RECV_BUFFER_SIZE)   
-            print('You Pressed A Key!')
+            comandoArriba = False
+            print('You pressed up Key!')
 
-        if keyboard.is_pressed('down arrow'):
+        if comandoAbajo:
             message_to_send = "Flecha abajo"
             client_socket.send(bytes(message_to_send, constants.ENCODING_FORMAT))
-            data_received = client_socket.recv(constants.RECV_BUFFER_SIZE)
+            comandoAbajo = False
+            print('You pressed down Key!')
 
         if keyboard.is_pressed('esc'):
             break     
+
         if received_message == "Flecha Arriba!\n":
             print("El otro cliente presiono flecha arriba")
-            received_message = ""
-            time.sleep(0.2)
+            received_message = "No hay Comando!"
+        
+        if received_message == "Flecha Abajo!\n":
+            print("El otro cliente presiono flecha abajo")
+            received_message = "No hay Comando!"
             
-        print(data_received.decode(constants.ENCODING_FORMAT))
-        time.sleep(0.1)
+            
+        
 
     print('Closing connection...BYE BYE...')
     client_socket.close()    

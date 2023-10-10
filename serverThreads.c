@@ -7,7 +7,7 @@
 #include <arpa/inet.h>
 #include <pthread.h>
 
-#define SERVER_PORT 8888
+#define SERVER_PORT 0000
 
 typedef struct {
     int socket;
@@ -67,7 +67,7 @@ void* ClientHandler(void* clientData) {
         printf("Received from %s:%d  : %s\n", inet_ntoa(clientAddress.sin_addr), ntohs(clientAddress.sin_port), message);
 
         if(strcmp("Flecha arriba", message) == 0){
-            printf("Presiono flecha arriba\n");
+            //printf("Presiono flecha arriba\n");
             for(int i = 0; i < sessionCount; i++) {
                 if(sessions[i]->client1 == data || sessions[i]->client2 == data) {
                     // Encontramos la sesión, averigua quién es el otro cliente
@@ -76,14 +76,25 @@ void* ClientHandler(void* clientData) {
                     // Ahora puedes enviar el mensaje al otro cliente
                     char message[] = "Flecha Arriba!\n";
                     send(otherClient->socket, message, strlen(message), 0);
-                    usleep(1000000);
                     break;
                 }
             }
-        }   
+        } else if(strcmp("Flecha abajo", message) == 0){
+            for(int i = 0; i < sessionCount; i++) {
+                if(sessions[i]->client1 == data || sessions[i]->client2 == data) {
+                    // Encontramos la sesión, averigua quién es el otro cliente
+                    ClientData* otherClient = (sessions[i]->client1 == data) ? sessions[i]->client2 : sessions[i]->client1;
 
-        char response[] = "No hay comando!\n";
-        send(socket, response, strlen(response), 0);
+                    // Ahora puedes enviar el mensaje al otro cliente
+                    char message[] = "Flecha Abajo!\n";
+                    send(otherClient->socket, message, strlen(message), 0);
+                    break;
+                }
+            }
+        }
+
+
+
     }
 
     if (bytesRead == 0) {
