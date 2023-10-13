@@ -1,10 +1,10 @@
 all: compile link
 
 compile:
-	gcc serverThreads.c -o serverThreads -lpthread
+	gcc PaddleSync.c server.c -o server -lpthread
 
 link:
-	./serverThreads
+	./server
 
 clean:
 	rm -f serverThreads 
