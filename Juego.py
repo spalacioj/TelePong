@@ -16,9 +16,14 @@ class Game:
         self.comandos = {'arriba': False, 'abajo': False}
         self.received_message_queue = queue.Queue()
         self.received_message = "No hay Comando"
+        self.message_to_send = ""
+        self.datos = []
         self.game = True
         self.game_over = False
         self.setup_pygame()
+        self.caso1 = False
+        self.caso2 = False
+
 
     def setup_pygame(self):
         pygame.init()
@@ -30,8 +35,8 @@ class Game:
         self.paddle_width, self.paddle_height = 10, 100
         self.paddle_speed = 50
         self.ball_radius = 10
-        self.ball_speed_x = 3
-        self.ball_speed_y = 3
+        self.ball_speed_x = 7
+        self.ball_speed_y = 7
 
         self.paddle1_x, self.paddle1_y = 10, (self.height - self.paddle_height) // 2
         self.paddle2_x, self.paddle2_y = self.width - 20, (self.height - self.paddle_height) // 2
@@ -49,7 +54,8 @@ class Game:
         while True:
             self.protocol_message = self.protocol.receive()
             if self.protocol_message:
-                self.received_message_queue.put(self.protocol_message)
+                self.datos = self.protocol_message.split()
+                self.received_message_queue.put(self.datos[0])
 
 
     def presionoUpArrow(self):
@@ -77,10 +83,10 @@ class Game:
         while self.game:
             try:
                 self.received_message = self.received_message_queue.get_nowait()
-                if self.received_message == "Flecha Arriba!\n":
+                if self.received_message == "Arriba!":
                     print("El otro cliente presionó flecha arriba")
 
-                if self.received_message == "Flecha Abajo!\n":
+                if self.received_message == "Abajo":
                     print("El otro cliente presionó flecha abajo")
             except:
                 pass
@@ -156,30 +162,38 @@ class Game:
                 # 4 if para revisar si el cliente presionó una tecla y mover la raqueta según su id
                 if self.comandos['arriba'] and self.paddle1_y > 0 and self.Player_id == 1:
                     self.paddle1_y -= self.paddle_speed
-                    message_to_send = "Flecha arriba"
-                    self.protocol.send(message_to_send)
+                    self.caso1 = True
+                    self.caso2 = False
+                    '''self.message_to_send = "Arriba " + self.ball_speed_x + " " + self.ball_speed_y + " " + self.paddle1_y + " " + self.paddle2_y
+                    self.protocol.send(self.message_to_send)'''
                     self.comandos['arriba'] = False
 
                 if self.comandos['abajo'] and self.paddle1_y < self.height - self.paddle_height and self.Player_id == 1:
                     self.paddle1_y += self.paddle_speed
-                    message_to_send = "Flecha abajo"
-                    self.protocol.send(message_to_send)
+                    self.caso1 = False
+                    self.caso2 = True
+                    '''self.message_to_send = "Abajo " + self.ball_speed_x + " " + self.ball_speed_y + " " + self.paddle1_y + " " + self.paddle2_y
+                    self.protocol.send(self.message_to_send)'''
                     self.comandos['abajo'] = False
 
                 if self.comandos['arriba'] and self.paddle2_y > 0 and self.Player_id == 2:
                     self.paddle2_y -= self.paddle_speed
-                    message_to_send = "Flecha arriba"
-                    self.protocol.send(message_to_send)
+                    self.caso1 = True
+                    self.caso2 = False
+                    '''self.message_to_send = "Arriba " + self.ball_speed_x + " " + self.ball_speed_y + " " + self.paddle1_y + " " + self.paddle2_y
+                    self.protocol.send(self.message_to_send)'''
                     self.comandos['arriba'] = False
 
                 if self.comandos['abajo'] and self.paddle2_y < self.height - self.paddle_height and self.Player_id == 2:
                     self.paddle2_y += self.paddle_speed
-                    message_to_send = "Flecha abajo"
-                    self.protocol.send(message_to_send)
+                    self.caso1 = False
+                    self.caso2 = True
+                    '''self.message_to_send = "Abajo " + self.ball_speed_x + " " + self.ball_speed_y + " " + self.paddle1_y + " " + self.paddle2_y
+                    self.protocol.send(self.message_to_send)'''
                     self.comandos['abajo'] = False
 
                 # Revisar mensaje del otro cliente para mover la raqueta contraria
-                if self.received_message == "Flecha Arriba!\n" and self.paddle2_y > 0 and self.Player_id == 1:
+                '''if self.received_message == "Flecha Arriba!\n" and self.paddle2_y > 0 and self.Player_id == 1:
                     self.paddle2_y -= self.paddle_speed
                     self.received_message = "No hay Comando!"
                     self.received_message_queue.task_done()
@@ -197,7 +211,7 @@ class Game:
                 if self.received_message == "Flecha Abajo!\n" and self.paddle1_y < self.height - self.paddle_height and self.Player_id == 2:
                     self.paddle1_y += self.paddle_speed
                     self.received_message = "No hay Comando!"
-                    self.received_message_queue.task_done()
+                    self.received_message_queue.task_done()'''
 
                 # Lógica de movimiento de la bola
                 self.ball_x += self.ball_speed_x
@@ -211,6 +225,27 @@ class Game:
                     self.paddle2_x < self.ball_x < self.paddle2_x + self.paddle_width and
                     self.paddle2_y < self.ball_y < self.paddle2_y + self.paddle_height):
                     self.ball_speed_x = -self.ball_speed_x
+
+                if self.caso1 == True:
+                    self.message_to_send = f"Arriba {self.ball_x} {self.ball_y} {self.paddle1_y} {self.paddle2_y}"
+                    self.protocol.send(self.message_to_send)
+                    self.comandos['arriba'] = False
+                    self.caso1 = False
+                    self.caso2 = False
+
+                if self.caso2 == True:
+                    self.message_to_send = f"Abajo {self.ball_x} {self.ball_y} {self.paddle1_y} {self.paddle2_y}"
+                    self.protocol.send(self.message_to_send)
+                    self.comandos['abajo'] = False
+                    self.caso1 = False
+                    self.caso2 = False
+                
+                if self.datos:
+                    self.ball_x = int(self.datos[1])
+                    self.ball_y = int(self.datos[2])
+                    self.paddle1_y = int(self.datos[3])
+                    self.paddle2_y = int(self.datos[4])
+                    self.datos = []
 
                 # Dibuja todo
                 self.window.fill(self.BLACK)
@@ -226,6 +261,7 @@ class Game:
                 # Actualiza la ventana
                 pygame.display.flip()
                 pygame.time.Clock().tick(60)
+                time.sleep(0.07)
 
         pygame.quit()
         sys.exit()

@@ -102,29 +102,30 @@ void* ClientHandler(void* clientData) {
     int bytesRead;
     while ((bytesRead = recv(socket, message, sizeof(message) - 1, 0)) > 0) {
         message[bytesRead] = '\0';
+        char tempMessage[50];
+        strcpy(tempMessage, message);
         printf("Received from %s:%d: %s\n", inet_ntoa(clientAddress.sin_addr), ntohs(clientAddress.sin_port), message);
-
-        if (strcmp("Flecha arriba", message) == 0) {
+        char * comando;
+        comando = strtok (message," ");
+        if (strcmp("Arriba", comando) == 0) {
             for (int i = 0; i < sessionCount; i++) {
                 if (sessions[i]->client1 == data || sessions[i]->client2 == data) {
                     // Encontramos la sesión, averigua quién es el otro cliente
                     ClientData* otherClient = (sessions[i]->client1 == data) ? sessions[i]->client2 : sessions[i]->client1;
 
-                    // Ahora puedes enviar el mensaje al otro cliente
-                    char upMessage[] = "Flecha Arriba!\n";
-                    send(otherClient->socket, upMessage, strlen(upMessage), 0);
+                    send(otherClient->socket, tempMessage, strlen(tempMessage), 0);
+                    send(socket, tempMessage, strlen(tempMessage), 0);
                     break;
                 }
             }
-        } else if (strcmp("Flecha abajo", message) == 0) {
+        } else if (strcmp("Abajo", comando) == 0) {
             for (int i = 0; i < sessionCount; i++) {
                 if (sessions[i]->client1 == data || sessions[i]->client2 == data) {
                     // Encontramos la sesión, averigua quién es el otro cliente
                     ClientData* otherClient = (sessions[i]->client1 == data) ? sessions[i]->client2 : sessions[i]->client1;
 
-                    // Ahora puedes enviar el mensaje al otro cliente
-                    char downMessage[] = "Flecha Abajo!\n";
-                    send(otherClient->socket, downMessage, strlen(downMessage), 0);
+                    send(otherClient->socket, tempMessage, strlen(tempMessage), 0);
+                    send(socket, tempMessage, strlen(tempMessage), 0);
                     break;
                 }
             }

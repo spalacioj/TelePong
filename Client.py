@@ -1,15 +1,8 @@
-import keyboard
 import time
-import threading
 from PaddleSync import SocketProtocol
-import queue
-import pygame
-import sys
-import pygame.time
 from Juego import Game
 
 protocol = SocketProtocol()
-
 
 def main():
     print('***********************************')
@@ -20,8 +13,8 @@ def main():
     protocol.receive()
     print('Enter \"quit\" to exit')
     print('Input commands:')
-    Player_id = protocol.receive()
-    Player_id = int(Player_id[len(Player_id)-2])
+    MensajeId = protocol.receive()
+    Player_id = int(MensajeId[len(MensajeId)-2])
     print(Player_id)
     while True:
         comandoInicio = protocol.receive()
@@ -33,10 +26,9 @@ def main():
     time.sleep(1.5)
     print("1...")
     time.sleep(1.5)
-    game = Game(protocol=protocol,Player_id=Player_id)
-    game.main()        
-            
-        
+    game = Game(protocol=protocol, Player_id=Player_id)
+    game.main()
+             
     print('Closing connection...BYE BYE...')
     protocol.close()
 
