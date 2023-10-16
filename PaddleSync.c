@@ -8,10 +8,25 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 
-extern ClientData* waitingClients[100];
-extern Session* sessions[50];
+extern ClientData* waitingClients[10];
+extern Session* sessions[5];
 extern int waitingCount;
 extern int sessionCount;
+FILE* logFile;
+
+void logMessage(char* message) {
+    if (logFile) {
+        fprintf(logFile, "%s\n", message);
+        fflush(logFile);
+    }
+}
+
+void initLogFile(const char* logName) {
+    logFile = fopen(logName, "w");
+    if (logFile == NULL) {
+        perror("Could not create file");
+    }
+}
 
 int startServer(int port) {
     int listenSocket;
@@ -20,6 +35,7 @@ int startServer(int port) {
     listenSocket = socket(AF_INET, SOCK_STREAM, 0);
     if (listenSocket == -1) {
         perror("Could not create socket");
+        logMessage("Could not create socket");
         return -1;
     }
     server.sin_family = AF_INET;
@@ -28,6 +44,7 @@ int startServer(int port) {
 
     if (bind(listenSocket, (struct sockaddr*)&server, sizeof(server)) == -1) {
         perror("Bind failed");
+        logMessage("bind failed");
         return -1;
     }
 
@@ -48,17 +65,6 @@ ClientData* acceptClient(int serverSocket) {
     return newClient;
 }
 
-bool isClientConnected(int clientSocket) {
-    fd_set readSet;
-    FD_ZERO(&readSet);
-    FD_SET(clientSocket, &readSet);
-    struct timeval timeout;
-    timeout.tv_sec = 0;
-    timeout.tv_usec = 0;
-    int result = select(clientSocket + 1, &readSet, NULL, NULL, &timeout);
-    return result == 0;
-}
-
 bool isClientInSession(ClientData* client) {
     for(int i = 0; i < sessionCount; i++) {
         if(sessions[i]->client1 == client || sessions[i]->client2 == client) {
@@ -73,10 +79,6 @@ void* ClientHandler(void* clientData) {
     int socket = data->socket;
     struct sockaddr_in clientAddress = data->address;
     char message[100];
-
-    /*char response[] = "Connected to server\n";
-    send(socket, response, strlen(response), 0);*/
-
 
     while (!isClientInSession(data)) {
         usleep(100000); // Espera 100 ms
@@ -104,21 +106,13 @@ void* ClientHandler(void* clientData) {
         message[bytesRead] = '\0';
         char tempMessage[50];
         strcpy(tempMessage, message);
+        char AccionLogger[256];
+        snprintf(AccionLogger, sizeof(AccionLogger), "Received from %s:%d: %s", inet_ntoa(clientAddress.sin_addr), ntohs(clientAddress.sin_port), message);
+        logMessage(AccionLogger);
         printf("Received from %s:%d: %s\n", inet_ntoa(clientAddress.sin_addr), ntohs(clientAddress.sin_port), message);
         char * comando;
         comando = strtok (message," ");
-        if (strcmp("Arriba", comando) == 0) {
-            for (int i = 0; i < sessionCount; i++) {
-                if (sessions[i]->client1 == data || sessions[i]->client2 == data) {
-                    // Encontramos la sesión, averigua quién es el otro cliente
-                    ClientData* otherClient = (sessions[i]->client1 == data) ? sessions[i]->client2 : sessions[i]->client1;
-
-                    send(otherClient->socket, tempMessage, strlen(tempMessage), 0);
-                    send(socket, tempMessage, strlen(tempMessage), 0);
-                    break;
-                }
-            }
-        } else if (strcmp("Abajo", comando) == 0) {
+        if (strcmp("Movement", comando) == 0) {
             for (int i = 0; i < sessionCount; i++) {
                 if (sessions[i]->client1 == data || sessions[i]->client2 == data) {
                     // Encontramos la sesión, averigua quién es el otro cliente
@@ -134,8 +128,10 @@ void* ClientHandler(void* clientData) {
 
     if (bytesRead == 0) {
         printf("Client disconnected.\n");
+        logMessage("Client disconnected.\n");
     } else {
         perror("Receive failed");
+        logMessage("Receive failed");
     }
     close(socket);
     free(clientData);
@@ -152,12 +148,20 @@ void createNewSession(ClientData* waitingClients[], Session* sessions[], int* wa
         inet_ntoa(newSession->client1->address.sin_addr),
         inet_ntoa(newSession->client2->address.sin_addr));
 
+    char sesionLogger[256];
+    snprintf(sesionLogger, sizeof(sesionLogger), "Nueva sesion creada con ID %d entre %s y %s\n",
+         *sessionCount,
+         inet_ntoa(newSession->client1->address.sin_addr),
+         inet_ntoa(newSession->client2->address.sin_addr));
+    
+    logMessage(sesionLogger);
+
+
+
     char sessionResponse[] = "Eres jugador 2\n";
     send(sessions[*sessionCount]->client1->socket, sessionResponse, strlen(sessionResponse), 0);
     send(sessions[*sessionCount]->client2->socket, sessionResponse, strlen(sessionResponse), 0);
     (*sessionCount)++;
-
-
 }
 
 void iniciarJuego(ClientData* newClient) {

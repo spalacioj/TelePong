@@ -5,15 +5,21 @@
 #include <pthread.h>
 #include "PaddleSync.h"
 
-#define SERVER_PORT 8888
 
 ClientData* waitingClients[100];
 Session* sessions[50];
 int waitingCount = 0;
 int sessionCount = 0;
 
-int main() {
-    int serverSocket = startServer(SERVER_PORT);
+int main(int argc, char *argv[]) {
+    int serverPort = 8888;
+    if (argc > 1) {
+        serverPort = atoi(argv[1]); 
+    }
+    char *logName = argv[2];
+    initLogFile(logName);
+    
+    int serverSocket = startServer(serverPort);
     if (serverSocket == -1) {
         return 1;
     }
@@ -57,7 +63,6 @@ int main() {
 
         }
     }
-
     close(serverSocket);
     return 0;
 }

@@ -28,7 +28,6 @@ def main():
     time.sleep(1.5)
     game = Game(protocol=protocol, Player_id=Player_id)
     game.main()
-             
     print('Closing connection...BYE BYE...')
     protocol.close()
 

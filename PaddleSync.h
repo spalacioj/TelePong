@@ -22,10 +22,11 @@ typedef struct {
 // Funciones del protocolo
 int startServer(int port);
 ClientData* acceptClient(int serverSocket);
-bool isClientConnected(int clientSocket);
 bool isClientInSession(ClientData* client);
 void* ClientHandler(void* clientData);
 void createNewSession(ClientData* waitingClients[], Session* sessions[], int* waitingCount, int* sessionCount);
 void iniciarJuego(ClientData* newClient);
+void logMessage(char* message);
+void initLogFile(const char* logName);
 
 #endif // PADDLESYNC_H
